@@ -1,4 +1,4 @@
-#define POSIX_SOURCE 200809L
+#define _POSIX_C_SOURCE 200809L
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -15,9 +15,10 @@
 // client.c hostname porta
 int main(int argc, char *argv[]){
     int sd,err,nread;
-    u_int8_t buffer[2048];
+    char input[16];
+    char buffer[2048];
     struct addrinfo hints, *res, *ptr;
-
+    
     if(argc!=3){
         fprintf(stderr,"Errore numero parametri\n");
         exit(EXIT_FAILURE);
@@ -33,7 +34,7 @@ int main(int argc, char *argv[]){
         exit(EXIT_FAILURE);
     }
     for(ptr = res ; ptr != NULL; ptr=ptr->ai_next){
-        sd = socket(res->ai_family,res->ai_socktype,res->ai_protocol);
+        sd = socket(ptr->ai_family,ptr->ai_socktype,ptr->ai_protocol);
         if(sd < 0){
             continue;
         }
@@ -45,7 +46,26 @@ int main(int argc, char *argv[]){
 
     freeaddrinfo(res);
 
-    // Logica implementativa
+    if (ptr == NULL) {
+    fprintf(stderr, "Impossibile connettersi al server\n");
+    exit(EXIT_FAILURE);
+    }
+
+    while(1){
+        if((nread = read(sd,buffer,sizeof(buffer) -1)) <=0){
+            break;
+        }
+        buffer[nread] = '\0';
+        printf("%s",buffer);
+        fflush(stdout);
+
+        if(strstr(buffer, "giocatore") != NULL || strstr(buffer, "computer") != NULL || strstr(buffer, "pareggio") != NULL ){
+            break;
+        }
+
+        if(fgets(input,sizeof(input),stdin) == NULL ) break;
+        write_all(sd,input,strlen(input));
+    }
 
 
 
